@@ -1,0 +1,107 @@
+import turtle as turtle_graphics
+import random
+import collections
+import tkinter as tk
+from PIL import ImageGrab
+import os
+
+
+BORDER_COLOR = '#000000'  # so you can add 'black' to COLORS below
+
+BORDER_WIDTH = 3
+
+MINIMUM_DIVISIBLE_PORTION = .08  # limits recursion
+
+COLORS = ('white', 'white','white','white','white','white','white','white','white','white','white', 'red','red', 'white', 'blue','blue','blue', 'yellow')  # multiple 'white' to increase probability
+
+Bounds = collections.namedtuple('Bounds', ['x', 'y', 'width', 'height'])
+
+PICTURE_BOUNDS = Bounds(x=-300, y=-305, width=650, height=575)
+
+
+def dump_gui(nbr, piet,k):
+    """
+    takes a png screenshot of a tkinter window, and saves it on in cwd
+    """
+    print('...dumping gui window to png')
+    print(nbr)
+    if not os.path.isdir(str(k)):
+        os.system('mkdir '+str(k))
+    t.hideturtle()
+    ImageGrab.grab().crop((330, 50, 1200, 820)).save(str(k)+"/"+"image" + str(nbr)+".png")
+
+
+
+def fill_rectangle(turtle, bounds, color=BORDER_COLOR):
+    """ Fill a rectangle with the border color (by default) and then fill the center with a bright color """
+    turtle.penup()
+    turtle.goto(bounds.x, bounds.y)
+    turtle.color(color)
+    turtle.pendown()
+    turtle.begin_fill()
+    for _ in range(2):
+        turtle.forward(bounds.width)
+        turtle.left(90)
+        turtle.forward(bounds.height)
+        turtle.left(90)
+    turtle.end_fill()
+    turtle.penup()
+
+    if color == BORDER_COLOR:
+        fill_rectangle(turtle, Bounds(bounds.x + BORDER_WIDTH, bounds.y + BORDER_WIDTH, bounds.width - BORDER_WIDTH*2, bounds.height - BORDER_WIDTH*2), random.choice(COLORS))
+
+
+def mondrian(piet, bounds, nbr,k):
+    """ Divide, fill and divide & fill some more.  Intuitively and recursively """
+    if bounds.width < bounds.height:
+        dimension = 'height'
+        random_dimension = random.randint(getattr(bounds, dimension) // 6, 2 * getattr(bounds, dimension) // 3)
+        bounds_yin = Bounds(bounds.x, y=bounds.y + random_dimension, width=bounds.width, height=bounds.height - random_dimension)
+        bounds_yang = Bounds(bounds.x, bounds.y, bounds.width, random_dimension)
+    else:
+        dimension = 'width'
+        random_dimension = random.randint(getattr(bounds, dimension) // 6, 2 * getattr(bounds, dimension) // 3)
+        bounds_yin = Bounds(bounds.x, bounds.y, random_dimension, bounds.height)
+        bounds_yang = Bounds(x=bounds.x + random_dimension, y=bounds.y, width=bounds.width - random_dimension, height=bounds.height)
+
+    if getattr(bounds_yin, dimension) > getattr(bounds_yang, dimension):
+        bounds_paint, bounds_divide = bounds_yang, bounds_yin
+    else:
+        bounds_paint, bounds_divide = bounds_yin, bounds_yang
+
+    fill_rectangle(piet, bounds_paint)
+    
+    dump_gui(nbr, piet,k)
+
+    if getattr(bounds_divide, dimension) < MINIMUM_DIVISIBLE_PORTION * getattr(PICTURE_BOUNDS, dimension):
+        fill_rectangle(piet, bounds_divide)
+        
+        dump_gui(nbr, piet,k)
+    else:
+        mondrian(piet, bounds_divide, nbr+1,k)
+
+nbr = 0
+for k in range(100):
+    for i in range (1) :
+    
+        root = tk.Tk()
+        
+        canvas = tk.Canvas(root, width=1920, height=1080) 
+        canvas.pack()
+        
+        t = turtle_graphics.RawTurtle(canvas) 
+        t.speed('fastest')
+        t.penup()
+        t.goto(-350, -375)
+        t.pendown()
+        mondrian(t,PICTURE_BOUNDS,i,k)
+        t.hideturtle()
+        
+        
+        root.destroy()
+
+
+
+
+
+#
